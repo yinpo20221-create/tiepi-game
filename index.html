@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>铁皮突击队 · 网页原型 v0.3</title>
+<title>铁皮突击队 · 网页原型 v1.5</title>
 <style>
   * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
   html,body { background:#14161c; height:100%; overflow:hidden; font-family:"PingFang SC","Microsoft YaHei",sans-serif; }
@@ -26,7 +26,7 @@
 
   <div id="startScreen" class="overlay">
     <h1>🍬 铁皮突击队</h1>
-    <p class="big">网页原型 v1.4 · Q版突击 · 十二关(公平躲弹版) + 通关计时榜</p>
+    <p class="big">网页原型 v1.5 · Q版突击 · 十二关(公平躲弹版) + 通关计时榜</p>
     <p>参照合金弹头的玩法骨架:跑打跳 · 向上/向下开火 · 近身自动挥刀 · 手雷 · 救俘虏换重武器 · 开坦克 · 吃多了会变胖!<br>
     手机:左半屏按住拖动=摇杆(跟手出现) · 右下三个大圆钮:开火/跳/手雷(一样大)<br>
     电脑:方向键 + J开火 · K/空格跳 · L手雷 · ↓上/下坦克</p>
@@ -712,7 +712,7 @@ function giveWeapon(kind){
   showCallout(WEAPONS[kind].label + ' GET!', '弹药 ' + (P.ammo===Infinity?'∞':P.ammo));
   sfx.pickup();
 }
-function gunPivot(){ return { x: P.x, y: P.crouch ? P.y - 12 : P.y - 20 }; }
+function gunPivot(){ return { x: P.x, y: P.crouch ? P.y - 12 * HERO_S : P.y - 20 * HERO_S }; }
 function updateAim(){
   if(P.inTank){ P.aimAng = keys.U ? (keys.L||keys.R ? (P.face>0? -Math.PI/4 : -Math.PI*3/4) : -Math.PI/2) : (P.face>0?0:Math.PI); return; }
   if(P.crouch){ P.aimAng = P.face > 0 ? 0 : Math.PI; return; }
@@ -741,7 +741,7 @@ function playerShoot(){
   }
   const wpn = WEAPONS[P.weapon];
   const pv = gunPivot();
-  const gx = pv.x + Math.cos(P.aimAng) * 23, gy = pv.y + Math.sin(P.aimAng) * 23;
+  const gx = pv.x + Math.cos(P.aimAng) * 23 * HERO_S, gy = pv.y + Math.sin(P.aimAng) * 23 * HERO_S;
   const mk = (ang)=>{ bullets.push({ x:gx, y:gy, vx:Math.cos(ang)*wpn.spd, vy:Math.sin(ang)*wpn.spd,
       dmg:wpn.dmg, life:wpn.life||75, aoe:wpn.aoe||0, rocket:P.weapon==='rocket', homing:!!wpn.homing, flame:!!wpn.flame, fat:P.fatMode }); casing(gx, gy+4, P.face); };
   if(P.weapon==='shotgun'){ const n = wpn.pellets + (P.fatMode?2:0); for(let i=0;i<n;i++) mk(P.aimAng + rnd(-wpn.spread, wpn.spread)); sfx.boomS(); }
@@ -814,7 +814,7 @@ function foeShoot(f, spd, shell, force){
   if(!force){ const now = timeMs; shotLog = shotLog.filter(t => now - t < 330);
     if(shotLog.length >= 2) return false; shotLog.push(now); }
   // 瞄准点跟随姿势(蹲下就瞄得低)+ 一点散布,子弹本身不追踪——开火后你动,它就打空
-  const dx = P.x - f.x, dy = (P.crouch ? P.y - 11 : P.y - 20) - (f.y - 24); // 瞄准无散布:打得准,但开火后你变姿势它就打空
+  const dx = P.x - f.x, dy = (P.crouch ? P.y - 14 : P.y - 26) - (f.y - 24); // 瞄准无散布:打得准,但开火后你变姿势它就打空
   const a = Math.atan2(dy, dx), s = spd || 5.4;
   ebullets.push({ x:f.x + Math.sign(dx)*18, y:f.y - 24, vx:Math.cos(a)*s, vy:Math.sin(a)*s, grenade:false, shell:!!shell });
   return true;
@@ -1133,7 +1133,7 @@ function updateBullets(dt){
       if(Math.abs(b.x - m.x) < 14 && b.y > m.y - 15 && b.y < m.y + 3){ detonateMine(m); hit = true; break; } }
     if(!hit) for(const f of foes){ if(f.deadT > 0) continue;
       const fy = f.y || GROUND;
-      if(Math.abs(b.x - f.x) < (f.type==='turret'? 26 : f.type==='etank'? 40 : f.type==='nest'? 26 : 17) && b.y > fy - (f.h || (f.type==='etank'? 44 : 46)) && b.y < fy + 2){
+      if(Math.abs(b.x - f.x) < (f.type==='turret'? 34 : f.type==='etank'? 52 : f.type==='nest'? 34 : 22) && b.y > fy - (f.h ? f.h * FOE_S : (f.type==='etank'? 57 : 60)) && b.y < fy + 2){
         // 盾牌兵正面挡子弹(火箭/爆炸/俯冲弹除外)
         if(f.type === 'shield' && !b.rocket && !b.aoe && Math.sign(b.vx) === -f.face && b.vy < 2.5){
           sfx.clang(); sparks(b.x, b.y); floatText(f.x, fy - 56, '挡!', '#cfe3ff'); hit = true; break; }
@@ -1172,7 +1172,7 @@ function updateBullets(dt){
       if(b.arm > 80 && !P.inTank && Math.abs(P.x - b.x) < brX && Math.abs(P.y - b.y) < brY) hurtPlayer(b.x);
       if(b.arm > 80 && P.inTank && Math.abs(tank.x - b.x) < brT) hurtTank();
       b.life = 0; continue; }
-    if(b.arm > 80 && !P.inTank && P.deadT === 0 && Math.abs(b.x - P.x) < (b.shell? 15 : 11) + 8 && Math.abs(b.y - (P.crouch ? P.y - 10 : P.y - 19)) < (P.crouch ? 8 : 17)){ hurtPlayer(b.x); b.life = 0; }
+    if(b.arm > 80 && !P.inTank && P.deadT === 0 && Math.abs(b.x - P.x) < (b.shell? 15 : 11) + 10 && Math.abs(b.y - (P.crouch ? P.y - 13 : P.y - 25)) < (P.crouch ? 10 : 22)){ hurtPlayer(b.x); b.life = 0; }
     else if(b.arm > 80 && P.inTank && Math.abs(b.x - tank.x) < 46 && b.y > tank.y - 52 && b.y < tank.y + 2){ hurtTank(); b.life = 0; }
     if(b.y > H + 30 || b.x < camX - 60 || b.x > camX + W + 60) b.life = 0;
   }
@@ -1760,12 +1760,15 @@ function face(x, y, r, opt){
   if(opt.angry){ ctx.beginPath(); ctx.moveTo(x - r*.55, y - r*.42); ctx.lineTo(x - r*.12, y - r*.26);
     ctx.moveTo(x + r*.55, y - r*.42); ctx.lineTo(x + r*.12, y - r*.26); ctx.stroke(); }
 }
+/* 人物/敌人放大系数:视觉与判定同步放大,手感不变 */
+const HERO_S = 1.3, FOE_S = 1.3;
 function drawHero(){
   if(P.inTank || P.deadT > 0) return;
   if(P.invuln > 0 && Math.floor(timeMs / 80) % 2 === 0) return;
   const x = P.x - camX, fat = P.fatMode;
   const bob = P.moving && P.onGround ? Math.abs(Math.sin(P.animT / 85)) * 3.4 : 0;
   const squash = P.landT > 0 ? 0.84 : 1;
+  ctx.save(); ctx.translate(x, P.y - bob); ctx.scale(HERO_S, HERO_S); ctx.translate(-x, -(P.y - bob));
   ctx.save(); ctx.translate(x, P.y - bob);
   ctx.scale(P.face * (fat ? 1.22 : 1), squash);
   const crouchK = P.crouch ? 0.74 : 1;
@@ -1812,11 +1815,13 @@ function drawHero(){
   }
   if(fat){ ctx.fillStyle = '#ff8fab'; ctx.font = 'bold 12px sans-serif'; ctx.textAlign = 'center';
     ctx.fillText('胖!', x, P.y - 66 - bob); }
+  ctx.restore();
 }
 function drawSoldierLike(f){
   const x = f.x - camX, fy = f.y || GROUND;
   if(x < -70 || x > W + 40) return;
   if(f.deadT > 0) ctx.globalAlpha = Math.max(0, 1 - f.deadT / 26);
+  ctx.save(); ctx.translate(x, fy); ctx.scale(FOE_S, FOE_S); ctx.translate(-x, -fy);
   ctx.save(); ctx.translate(x, fy); ctx.scale(f.face, 1);
   const lp = f.active && f.type !== 'thrower' && Math.abs(P.x - f.x) > 240 ? Math.sin(f.animT / 120) * 4.6 : 0;
   ctx.fillStyle = '#5f7186';
@@ -1837,33 +1842,38 @@ function drawSoldierLike(f){
     if(f.hp < 2){ ctx.strokeStyle = 'rgba(60,60,60,.6)'; ctx.lineWidth = 1.6;
       ctx.beginPath(); ctx.moveTo(sx - 6, fy - 40); ctx.lineTo(sx + 2, fy - 28); ctx.lineTo(sx - 3, fy - 18); ctx.stroke(); }
   }
+  ctx.restore();
   ctx.globalAlpha = 1;
 }
 function drawTurret(f){
   const x = f.x - camX, fy = f.y || GROUND;
   if(x < -70 || x > W + 40) return;
   if(f.deadT > 0) ctx.globalAlpha = Math.max(0, 1 - f.deadT / 26);
+  ctx.save(); ctx.translate(x, fy); ctx.scale(FOE_S, FOE_S); ctx.translate(-x, -fy);
   ctx.fillStyle = '#8a9a7b'; rr(x - 23, fy - 13, 46, 13, 5); ctx.fill();
   ctx.fillStyle = '#71836a'; ctx.beginPath(); ctx.arc(x, fy - 13, 17.5, Math.PI, 0); ctx.fill();
-  const a = Math.atan2((P.y - 22) - (fy - 20), P.x - f.x);
+  const a = Math.atan2((P.y - 29) - (fy - 20), P.x - f.x);
   ctx.save(); ctx.translate(x, fy - 19); ctx.rotate(a); ctx.fillStyle = '#4a4f57'; rr(8, -3.2, 21, 6.4, 3); ctx.fill(); ctx.restore();
   ctx.fillStyle = '#e23b2e'; circ(x, fy - 24, 3.4); ctx.fill();
   if(f.hp < 5){ ctx.fillStyle = 'rgba(20,20,26,.6)'; rr(x - 18, fy - 44, 36, 6, 3); ctx.fill();
     ctx.fillStyle = '#ff7a6b'; rr(x - 17, fy - 43, 34 * f.hp / 5, 4, 2); ctx.fill(); }
+  ctx.restore();
   ctx.globalAlpha = 1;
 }
 function drawEtank(f){
   const x = f.x - camX, fy = f.y || GROUND;
   if(x < -110 || x > W + 60) return;
   if(f.deadT > 0) ctx.globalAlpha = Math.max(0, 1 - f.deadT / 26);
+  ctx.save(); ctx.translate(x, fy); ctx.scale(FOE_S, FOE_S); ctx.translate(-x, -fy);
   ctx.fillStyle = '#5d4038'; rr(x - 42, fy - 15, 84, 15, 7); ctx.fill();
   ctx.fillStyle = '#c9ccd4'; for(let i = 0; i < 4; i++){ circ(x - 28 + i * 19, fy - 7.5, 5); ctx.fill(); }
   ctx.fillStyle = '#b0512f'; rr(x - 34, fy - 31, 68, 17, 7); ctx.fill();
   ctx.fillStyle = '#96421f'; ctx.beginPath(); ctx.arc(x, fy - 31, 13.5, Math.PI, 0); ctx.fill();
-  const a = Math.atan2((P.y - 22) - (fy - 32), P.x - f.x);
+  const a = Math.atan2((P.y - 29) - (fy - 32), P.x - f.x);
   ctx.save(); ctx.translate(x, fy - 32); ctx.rotate(a); ctx.fillStyle = '#3c3f45'; rr(6, -3.6, 30, 7.2, 3); ctx.fill(); ctx.restore();
   ctx.fillStyle = 'rgba(20,20,26,.6)'; rr(x - 26, fy - 58, 52, 6.4, 3); ctx.fill();
   ctx.fillStyle = '#ffb340'; rr(x - 25, fy - 57, 50 * Math.max(0, f.hp) / 8, 4, 2); ctx.fill();
+  ctx.restore();
   ctx.globalAlpha = 1;
 }
 function drawTank(){
@@ -1895,6 +1905,7 @@ function drawTank(){
 function drawFlyer(f){
   const x = f.x - camX, fy = f.y || GROUND - 168;
   if(f.deadT > 0){ ctx.fillStyle = '#e2703a'; circ(x, fy - 20, 8); ctx.fill(); return; }
+  ctx.save(); ctx.translate(x, fy); ctx.scale(FOE_S, FOE_S); ctx.translate(-x, -fy);
   const spin = Math.sin(timeMs * 0.09) * 5;
   ctx.strokeStyle = '#39434e'; ctx.lineWidth = 3.4; ctx.lineCap = 'round';
   ctx.beginPath(); ctx.moveTo(x - 15, fy - 47); ctx.lineTo(x + 15, fy - 47 + spin * 0.3); ctx.stroke();
@@ -1905,10 +1916,12 @@ function drawFlyer(f){
   ctx.fillStyle = '#8d99a6'; rr(x - 13, fy - 31, 5, 12, 2); ctx.fill();
   ctx.strokeStyle = '#5d4a36'; ctx.lineWidth = 3.6;
   ctx.beginPath(); ctx.moveTo(x - 2, fy - 19); ctx.lineTo(x - 5, fy - 9); ctx.moveTo(x + 6, fy - 19); ctx.lineTo(x + 10, fy - 10); ctx.stroke();
+  ctx.restore();
 }
 function drawSled(f){
   const x = f.x - camX, fy = f.y || GROUND;
   if(f.deadT > 0){ ctx.fillStyle = '#c23b2a'; rr(x - 16, fy - 5, 34, 6, 3); ctx.fill(); return; }
+  ctx.save(); ctx.translate(x, fy); ctx.scale(FOE_S, FOE_S); ctx.translate(-x, -fy);
   ctx.fillStyle = '#c23b2a'; rr(x - 17, fy - 6, 36, 6, 3); ctx.fill();
   ctx.fillStyle = '#8d99a6'; rr(x - 19, fy - 2, 40, 3, 2); ctx.fill();
   ctx.fillStyle = '#7ecb62'; rr(x - 8, fy - 24, 17, 15, 6); ctx.fill();      // 身体(前倾)
@@ -1918,6 +1931,7 @@ function drawSled(f){
   ctx.fillStyle = '#42566b'; rr(x + 6, fy - 22, 15, 5.4, 2.6); ctx.fill();   // 枪
   ctx.strokeStyle = '#5d4a36'; ctx.lineWidth = 4; ctx.lineCap = 'round';
   ctx.beginPath(); ctx.moveTo(x - 3, fy - 12); ctx.lineTo(x - 6, fy - 4); ctx.moveTo(x + 7, fy - 12); ctx.lineTo(x + 12, fy - 4); ctx.stroke();
+  ctx.restore();
 }
 function drawLights(){
   for(const L of lights){ const cx = (L.cx !== undefined ? L.cx : L.x) - camX;
@@ -1934,15 +1948,18 @@ function drawLights(){
 }
 function drawNest(f){
   const x = f.x - camX, fy = f.y || GROUND;
+  ctx.save(); ctx.translate(x, fy); ctx.scale(FOE_S, FOE_S); ctx.translate(-x, -fy);
   ctx.fillStyle = f.deadT > 0 ? '#b08c58' : '#c99a52';
   ctx.beginPath(); ctx.ellipse(x, fy - 4, 30, 17, 0, Math.PI, 0); ctx.fill();
   ctx.fillStyle = '#8a6844'; ctx.beginPath(); ctx.ellipse(x - 9, fy - 12, 8, 6, 0, 0, 7); ctx.fill(); ctx.beginPath(); ctx.ellipse(x + 10, fy - 9, 6.5, 5, 0, 0, 7); ctx.fill();
   ctx.fillStyle = '#ffe9c9'; circ(x - 17, fy - 5, 4); ctx.fill(); circ(x + 18, fy - 4, 3.4); ctx.fill(); circ(x + 2, fy - 3, 3); ctx.fill();
   if(f.deadT <= 0 && f.flash > 0){ ctx.fillStyle = 'rgba(255,255,255,.5)'; ctx.beginPath(); ctx.ellipse(x, fy - 4, 30, 17, 0, Math.PI, 0); ctx.fill(); }
+  ctx.restore();
 }
 function drawScorp(f){
   const x = f.x - camX, fy = f.y || GROUND;
   if(f.deadT > 0){ ctx.fillStyle = '#c98d5f'; circ(x, fy - 3, 8); ctx.fill(); return; }
+  ctx.save(); ctx.translate(x, fy); ctx.scale(FOE_S, FOE_S); ctx.translate(-x, -fy);
   const wig = Math.sin(timeMs * 0.03 + f.animT) * 1.6;
   ctx.fillStyle = '#e8862e';
   ctx.beginPath(); ctx.ellipse(x, fy - 8, 15, 7.5, 0, 0, 7); ctx.fill();
@@ -1952,14 +1969,17 @@ function drawScorp(f){
   ctx.beginPath(); for(let i = -1; i <= 1; i++){ ctx.moveTo(x + i * 8 - 4, fy - 3); ctx.lineTo(x + i * 8 - 8, fy); ctx.moveTo(x + i * 8 + 4, fy - 3); ctx.lineTo(x + i * 8 + 8, fy); } ctx.stroke();
   ctx.fillStyle = '#26303a'; circ(x + f.face * 7, fy - 10, 1.8); ctx.fill(); circ(x + f.face * 12, fy - 9, 1.8); ctx.fill();
   ctx.fillStyle = '#ffd9a0'; circ(x + f.face * 16, fy - 6 + wig * 0.3, 3.4); ctx.fill(); circ(x + f.face * 16, fy - 12 - wig * 0.3, 3.4); ctx.fill();
+  ctx.restore();
 }
 function drawMortarTube(f){
   if(f.type !== 'mortar' || f.deadT > 0) return;
   const x = f.x - camX, fy = f.y || GROUND;
+  ctx.save(); ctx.translate(x, fy); ctx.scale(FOE_S, FOE_S); ctx.translate(-x, -fy);
   ctx.save(); ctx.translate(x - 4, fy - 34); ctx.rotate(-0.5);
   ctx.fillStyle = '#5f748c'; rr(-4, -22, 9, 24, 4); ctx.fill();
   ctx.fillStyle = '#42566b'; rr(-5.5, -25, 12, 6, 3); ctx.fill(); ctx.restore();
   ctx.fillStyle = '#42566b'; rr(x - 14, fy - 4, 22, 5, 2); ctx.fill();
+  ctx.restore();
 }
 function drawDrillBoss(){
   const x = boss.x - camX, y = boss.y;
